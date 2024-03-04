@@ -187,13 +187,24 @@ end
 
 function _varmap_to_vars(varmap::Dict, varlist; defaults = Dict(), check = false,
         toterm = Symbolics.diff2term, initialization_phase = false)
-    varmap = merge(defaults, varmap) # prefers the `varmap`
-    varmap = Dict(toterm(value(k)) => value(varmap[k]) for k in keys(varmap))
+    _varmap = merge(defaults, varmap) # prefers the `varmap`
+    varmap = Dict()
+    for (k, v) in _varmap
+        varmap[value(k)] = value(v)
+        varmap[toterm(value(k))] = value(v)
+    end
     # resolve symbolic parameter expressions
     for (p, v) in pairs(varmap)
-        varmap[p] = fixpoint_sub(v, varmap)
+        varmap[p] = fixpoint_sub(unwrap(v), varmap)
     end
-
+    for var in varlist
+        var = value(var)
+        haskey(varmap, var) && continue
+        val = fixpoint_sub(unwrap(var), varmap)
+        if symbolic_type(val) === NotSymbolic()
+            varmap[var] = val
+        end
+    end
     missingvars = setdiff(varlist, collect(keys(varmap)))
     check && (isempty(missingvars) || throw(MissingVariablesError(missingvars)))
 
