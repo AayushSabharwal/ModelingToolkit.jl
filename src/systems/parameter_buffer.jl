@@ -161,7 +161,7 @@ function MTKParameters(
     # Don't narrow nonnumeric types
     nonnumeric_buffer = nonnumeric_buffer
 
-    if pdeps !== nothing
+    if pdeps !== nothing && !isempty(pdeps)
         pdeps = Dict(k => fixpoint_sub(v, pdeps) for (k, v) in pdeps)
         dep_exprs = ArrayPartition((Any[missing for _ in 1:length(v)] for v in dep_buffer)...)
         for (sym, val) in pdeps
